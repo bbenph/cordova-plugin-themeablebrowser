@@ -140,6 +140,8 @@ public class ThemeableBrowser extends CordovaPlugin {
     private long webViewTouch_LastTime = 0L;
     private Drawable cusBtnNormal;
     private Drawable cusBtnPressed;
+    private Button cusCloseBtn;
+
     /**
      * Executes the request and returns PluginResult.
      *
@@ -160,6 +162,7 @@ public class ThemeableBrowser extends CordovaPlugin {
             final String target = t;
             final Options features = parseFeature(args.optString(2));
 
+            this.cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
             this.cordova.getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -313,6 +316,18 @@ public class ThemeableBrowser extends CordovaPlugin {
             return false;
         }
         return true;
+    }
+
+    /**
+     * 处理横竖屏切换 cusclosebuttn位置
+     */
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        FrameLayout.LayoutParams cusCloseBtnParams = (FrameLayout.LayoutParams) cusCloseBtn.getLayoutParams();
+        cusCloseBtnParams.leftMargin=0;
+        cusCloseBtnParams.topMargin=0;
+        cusCloseBtn.setLayoutParams(cusCloseBtnParams);
     }
 
     /**
@@ -684,7 +699,7 @@ public class ThemeableBrowser extends CordovaPlugin {
                 });
 
                 // 自定义关闭按钮
-                final Button cusCloseBtn = new Button(cordova.getActivity());
+                cusCloseBtn = new Button(cordova.getActivity());
                 cusCloseBtn.setContentDescription("自定义关闭按钮");
                 FrameLayout.LayoutParams cusCloseBtnParams = new FrameLayout.LayoutParams(
                     LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
@@ -784,10 +799,9 @@ public class ThemeableBrowser extends CordovaPlugin {
                                     cusBtnIsclick = false;
                                 }
 
-                                LayoutParams layoutParams = cusCloseBtn.getLayoutParams();
                                 cusCloseBtnParams.leftMargin=v.getLeft();
                                 cusCloseBtnParams.topMargin=v.getTop();
-                                cusCloseBtn.setLayoutParams(layoutParams);
+
 
 //                                // 向四周吸附
 //                                int dx1 = (int) event.getRawX() - lastX;
