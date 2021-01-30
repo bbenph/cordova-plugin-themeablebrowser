@@ -45,6 +45,10 @@
             </feature>
         </config-file>
 
+        <!-- 拷贝按钮图片到Android目录 -->
+        <source-file src="src/android/res/drawable-xhdpi/close.png" target-dir="src/main/res/drawable-xhdpi" />
+        <source-file src="src/android/res/drawable-xhdpi/close_pressed.png" target-dir="src/main/res/drawable-xhdpi" />
+
         <source-file src="src/android/ThemeableBrowser.java" target-dir="src/com/initialxy/cordova/themeablebrowser" />
         <source-file src="src/android/ThemeableBrowserDialog.java" target-dir="src/com/initialxy/cordova/themeablebrowser" />
         <source-file src="src/android/InAppChromeClient.java" target-dir="src/com/initialxy/cordova/themeablebrowser" />
@@ -64,6 +68,10 @@
 
         <header-file src="src/ios/CDVThemeableBrowser.h" />
         <source-file src="src/ios/CDVThemeableBrowser.m" />
+
+        <!-- 拷贝按钮图片到ios目录 -->
+        <resource-file src="src/ios/Resources/close.png" />
+        <resource-file src="src/ios/Resources/close_pressed.png" />
 
         <framework src="CoreGraphics.framework" />
     </platform>

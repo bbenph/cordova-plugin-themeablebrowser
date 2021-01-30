@@ -21,6 +21,8 @@ package com.initialxy.cordova.themeablebrowser;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -70,10 +72,12 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
 import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CordovaResourceApi;
 import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.LOG;
 import org.apache.cordova.PluginManager;
@@ -129,7 +133,13 @@ public class ThemeableBrowser extends CordovaPlugin {
     private ValueCallback<Uri[]> mUploadCallbackLollipop;
     private final static int FILECHOOSER_REQUESTCODE = 1;
     private final static int FILECHOOSER_REQUESTCODE_LOLLIPOP = 2;
-
+    private long cusBtnTouchStartTime = 0;
+    private long cusBtnTouchEndTime = 0;
+    private boolean cusBtnIsclick;
+    private int cusBtnHeight;
+    private long webViewTouch_LastTime = 0L;
+    private Drawable cusBtnNormal;
+    private Drawable cusBtnPressed;
     /**
      * Executes the request and returns PluginResult.
      *
@@ -430,6 +440,7 @@ public class ThemeableBrowser extends CordovaPlugin {
      * Closes the dialog
      */
     public void closeDialog() {
+        this.cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         this.cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -671,6 +682,143 @@ public class ThemeableBrowser extends CordovaPlugin {
                         return false;
                     }
                 });
+
+                // 自定义关闭按钮
+                final Button cusCloseBtn = new Button(cordova.getActivity());
+                cusCloseBtn.setContentDescription("自定义关闭按钮");
+                FrameLayout.LayoutParams cusCloseBtnParams = new FrameLayout.LayoutParams(
+                    LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+//                cusCloseBtnParams.leftMargin=dpToPixels(3);
+//                cusCloseBtnParams.topMargin=dpToPixels(3);
+                cusCloseBtn.setLayoutParams(cusCloseBtnParams);
+                BrowserButton cusCloseBtnProp = new BrowserButton();
+                cusCloseBtnProp.image = "close";
+                cusCloseBtnProp.imagePressed = "close_pressed";
+                cusCloseBtnProp.event="cusClosePressed";
+                setButtonImages(cusCloseBtn,cusCloseBtnProp, DISABLED_ALPHA);
+                main.addView(cusCloseBtn);
+                try{
+                    cusBtnNormal = getImage(cusCloseBtnProp.image, null,1.0);
+                    cusBtnPressed = getImage(cusCloseBtnProp.imagePressed, null,1.0);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                cusBtnHeight = cusCloseBtn.getHeight();
+
+                cusCloseBtn.setOnClickListener(new View.OnClickListener(){
+                    @Override
+                    public void onClick(View v) {
+                        emitButtonEvent(
+                                cusCloseBtnProp,
+                                inAppWebView.getUrl());
+
+                        closeDialog();
+                    }
+                });
+
+                cusCloseBtn.setOnTouchListener(new View.OnTouchListener(){
+                    int lastX, lastY; // 记录移动的最后的位置
+                    @Override
+                    public boolean onTouch(View v, MotionEvent event) {
+                        DisplayMetrics metrics = getDisplayMetrics();
+                        int screenWidth = metrics.widthPixels;
+                        int screenHeight = metrics.heightPixels;
+                        int statusBarHeight = getStatusBarHeight(cordova.getContext());
+                        // 获取Action
+                        int ea = event.getAction();
+                        switch (ea) {
+                            case MotionEvent.ACTION_DOWN: // 按下
+                                lastX = (int) event.getRawX();
+                                lastY = (int) event.getRawY();
+                                cusBtnIsclick = false;//当按下的时候设置isclick为false
+                                cusBtnTouchStartTime = System.currentTimeMillis();
+                                cusCloseBtn.setBackground(cusBtnPressed);
+//                                Toast.makeText(cordova.getContext(), "ACTION_DOWN：" + lastX + "," + lastY, Toast.LENGTH_SHORT).show();
+                                break;
+                            case MotionEvent.ACTION_MOVE: // 移动
+                                cusBtnIsclick = true;//当按钮被移动的时候设置isclick为true
+                                // 移动的距离
+                                int dx = (int) event.getRawX() - lastX;
+                                int dy = (int) event.getRawY() - lastY;
+
+                                int left = v.getLeft() + dx;
+                                int top = v.getTop() + dy;
+                                int right = v.getRight() + dx;
+                                int bottom = v.getBottom() + dy;
+                                if (left < 0) {
+                                    left = 0;
+                                    right = left + v.getWidth();
+                                }
+                                if (right > screenWidth) {
+                                    right = screenWidth;
+                                    left = right - v.getWidth();
+                                }
+                                if (top < 0) {
+                                    top = 0;
+                                    bottom = top + v.getHeight();
+                                }
+//                                if(cordova.getContext().getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE){
+                                    screenHeight -= statusBarHeight; //为什么扣除 横屏时候获取的screenheight时包含状态栏的 所以可移动区域要扣掉状态栏高度
+                                                                     // 竖屏时候 无刘海机型获取的screenheight是包含状态栏的 有刘海机型状态栏在刘海区域 screenwidth获取的是不包含状态栏高度的
+                                                                    // 所以统一扣掉状态栏高度 这样会导致有刘海的机型 按钮可移动区域会少一些
+                                                                    // 但是可以省掉判断乱七八糟安卓厂商的否有api判断
+//                                }
+                                if (bottom > screenHeight) {
+                                    bottom = screenHeight;
+                                    top = bottom - v.getHeight();
+                                }
+                                v.layout(left, top, right, bottom); //设置view四个顶点坐标(相对父布局)
+                                Log.i("touch","position：" + left + ", " +top + ", " + right + ", " + bottom + ", 屏幕宽高 "+screenWidth + "," + screenHeight+","+statusBarHeight );
+//                                 Toast.makeText(cordova.getContext(), "position：" + left + ", " +
+//                                 top + ", " + right + ", " + bottom, Toast.LENGTH_SHORT).show();
+                                // 将当前的位置再次设置
+                                lastX = (int) event.getRawX();
+                                lastY = (int) event.getRawY();
+                                break;
+                            case MotionEvent.ACTION_UP: // 抬起
+                                cusCloseBtn.setBackground(cusBtnNormal);
+                                cusBtnTouchEndTime = System.currentTimeMillis();
+                                if ((cusBtnTouchEndTime - cusBtnTouchStartTime) > 0.1 * 1000L) {
+                                    cusBtnIsclick = true;
+                                } else {
+                                    cusBtnIsclick = false;
+                                }
+
+                                LayoutParams layoutParams = cusCloseBtn.getLayoutParams();
+                                cusCloseBtnParams.leftMargin=v.getLeft();
+                                cusCloseBtnParams.topMargin=v.getTop();
+                                cusCloseBtn.setLayoutParams(layoutParams);
+
+//                                // 向四周吸附
+//                                int dx1 = (int) event.getRawX() - lastX;
+//                                int dy1 = (int) event.getRawY() - lastY;
+//                                int left1 = v.getLeft() + dx1;
+//                                int top1 = v.getTop() + dy1;
+//                                int right1 = v.getRight() + dx1;
+//                                int bottom1 = v.getBottom() + dy1;
+//                                if (left1 < (screenWidth / 2)) {
+//                                    if (top1 < 100) {
+//                                        v.layout(left1, 0, right1, cusBtnHeight);
+//                                    } else if (bottom1 > (screenHeight - 200)) {
+//                                        v.layout(left1, (screenHeight - cusBtnHeight), right1, screenHeight);
+//                                    } else {
+//                                        v.layout(0, top1, cusBtnHeight, bottom1);
+//                                    }
+//                                } else {
+//                                    if (top1 < 100) {
+//                                        v.layout(left1, 0, right1, cusBtnHeight);
+//                                    } else if (bottom1 > (screenHeight - 200)) {
+//                                        v.layout(left1, (screenHeight - cusBtnHeight), right1, screenHeight);
+//                                    } else {
+//                                        v.layout((screenWidth - cusBtnHeight), top1, screenWidth, bottom1);
+//                                    }
+//                                }
+                                break;
+                        }
+                        return cusBtnIsclick; //ture时候会消费事件 也就是后续的click会无效
+                    }
+                });
+
 
                 // Back button
                 final Button back = createButton(
@@ -990,6 +1138,26 @@ public class ThemeableBrowser extends CordovaPlugin {
                     CookieManager.getInstance().removeSessionCookie();
                 }
 
+                //android 解决webView页面双击出现复制剪切
+                inAppWebView.setOnTouchListener(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View v, MotionEvent event) {
+                        switch (event.getAction()) {
+                            case MotionEvent.ACTION_DOWN:
+                                long currentTime = System.currentTimeMillis();
+                                long time = currentTime - webViewTouch_LastTime;
+                                if (time < 300) {
+                                    webViewTouch_LastTime = currentTime;
+                                    return true;
+                                } else {
+                                    webViewTouch_LastTime = currentTime;
+                                }
+                                break;
+                        }
+                        return false; //return true = 消费了事件  就是这个事件作废了
+                    }
+                });
+
                 inAppWebView.loadUrl(url);
                 inAppWebView.getSettings().setLoadWithOverviewMode(true);
                 inAppWebView.getSettings().setUseWideViewPort(true);
@@ -1154,6 +1322,24 @@ public class ThemeableBrowser extends CordovaPlugin {
         };
         this.cordova.getActivity().runOnUiThread(runnable);
         return "";
+    }
+
+    public DisplayMetrics getDisplayMetrics(){
+        DisplayMetrics metric  = cordova.getActivity().getResources().getDisplayMetrics();
+        // DisplayMetrics metric = new DisplayMetrics();
+        // cordova.getActivity().getWindowManager().getDefaultDisplay().getRealMetrics(metric);
+//        int screenWidth = metric.widthPixels;
+//        int screenHeight =metric.heightPixels;
+        return metric;
+    }
+
+    public static int getStatusBarHeight(Context context) {
+        int result = 0;
+        int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = context.getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
     }
 
     /**
