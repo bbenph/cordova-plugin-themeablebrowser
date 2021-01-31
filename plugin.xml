@@ -70,8 +70,8 @@
         <source-file src="src/ios/CDVThemeableBrowser.m" />
 
         <!-- 拷贝按钮图片到ios目录 -->
-        <resource-file src="src/ios/Resources/close.png" />
-        <resource-file src="src/ios/Resources/close_pressed.png" />
+        <resource-file src="src/ios/Resources/close@2x.png" />
+        <resource-file src="src/ios/Resources/close_pressed@2x.png" />
 
         <framework src="CoreGraphics.framework" />
     </platform>
