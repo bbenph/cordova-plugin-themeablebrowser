@@ -130,6 +130,12 @@
 @property (nonatomic) NSURL* currentURL;
 @property (nonatomic) CGFloat titleOffset;
 @property (nonatomic , readonly , getter=loadProgress) CGFloat currentProgress;
+
+@property (nonatomic, strong) IBOutlet UIButton* csCloseButton;
+@property (nonatomic, strong) UIImage* csCloseButtonImg;
+@property (nonatomic, strong) UIImage* csCloseButtonImg_Pressed;
+
+
 - (void)changeButtonImage:(int)buttonIndex buttonProps:(NSDictionary*)buttonProps;
 
 - (void)close;

@@ -69,6 +69,8 @@
 #define    LOCATIONBAR_HEIGHT 21.0
 #define    FOOTER_HEIGHT ((TOOLBAR_HEIGHT) + (LOCATIONBAR_HEIGHT))
 #define    TAG_SALT 100
+#define SCREEN_WIDTH ([[UIScreen mainScreen] bounds].size.width)
+#define SCREEN_HEIGHT ([[UIScreen mainScreen] bounds].size.height)
 
 #pragma mark CDVThemeableBrowser
 
@@ -242,6 +244,7 @@
 
 - (void)openInThemeableBrowser:(NSURL*)url withOptions:(NSString*)options
 {
+    [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;
     CDVThemeableBrowserOptions* browserOptions = [self parseOptions:options];
 
     // Among all the options, there are a few that ThemedBrowser would like to
@@ -1001,6 +1004,23 @@
     self.addressLabel.textColor = [UIColor colorWithWhite:1.000 alpha:1.000];
     self.addressLabel.userInteractionEnabled = NO;
 
+    UIEdgeInsets insets = [self safeAreaInsetsWithView];
+    NSDictionary *csCloseBtnOptions = @{kThemeableBrowserPropImage:@"close",kThemeableBrowserPropImagePressed:@"close_pressed"};
+    self.csCloseButtonImg =[self getImage:csCloseBtnOptions[kThemeableBrowserPropImage] altPath:nil altDensity:0];
+    self.csCloseButtonImg_Pressed =[self getImage:csCloseBtnOptions[kThemeableBrowserPropImagePressed] altPath:nil altDensity:0];
+    self.csCloseButton =[self createButton:csCloseBtnOptions action:nil withDescription:@"自定义关闭按钮"];
+    [self.view addSubview:self.csCloseButton];
+    CGRect csCloseBtnBounds = self.csCloseButton.bounds;
+    csCloseBtnBounds.origin.x = insets.left;
+    csCloseBtnBounds.origin.y = insets.top;
+    self.csCloseButton.frame = csCloseBtnBounds;
+    
+    // 单击事件
+    [self.csCloseButton addTarget:self action:@selector(cusCloseBtnClick) forControlEvents:UIControlEventTouchUpInside];
+    //添加手势 拖动
+    UIPanGestureRecognizer *panRcognize=[[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
+    [self.csCloseButton addGestureRecognizer:panRcognize];
+
     self.closeButton = [self createButton:_browserOptions.closeButton action:@selector(close) withDescription:@"close button"];
     self.backButton = [self createButton:_browserOptions.backButton action:@selector(goBack:) withDescription:@"back button"];
     self.forwardButton = [self createButton:_browserOptions.forwardButton action:@selector(goForward:) withDescription:@"forward button"];
@@ -1145,7 +1165,9 @@
 
     self.view.backgroundColor = [CDVThemeableBrowserViewController colorFromRGBA:[self getStringFromDict:_browserOptions.statusbar withKey:kThemeableBrowserPropColor withDefault:@"#ffffffff"]];
     [self.view addSubview:self.toolbar];
-    self.progressView=[[UIProgressView   alloc] initWithFrame:CGRectMake(0.0, toolbarY+toolbarHeight+[self getStatusBarOffset], self.view.bounds.size.width, 20.0)];
+//    self.progressView=[[UIProgressView   alloc] initWithFrame:CGRectMake(0.0, toolbarY+toolbarHeight+[self getStatusBarOffset], self.view.bounds.size.width, 20.0)];
+    
+    self.progressView=[[UIProgressView   alloc] initWithFrame:CGRectMake(insets.left,insets.top,SCREEN_WIDTH-insets.left-insets.right,SCREEN_HEIGHT-insets.top-insets.bottom)];
     self.progressView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
     self.progressView.progressViewStyle=UIProgressViewStyleDefault;
     self.progressView.progressTintColor=[CDVThemeableBrowserViewController colorFromRGBA:[self getStringFromDict:_browserOptions.browserProgress withKey: kThemeableBrowserPropProgressColor withDefault:@"#0000FF"]];
@@ -1157,6 +1179,88 @@
         [self.view addSubview:self.progressView];
         [self.webView addObserver:self forKeyPath:@"estimatedProgress" options:NSKeyValueObservingOptionNew context:nil];
     }
+}
+
+/**
+ *  处理拖动手势
+ *
+ *  @param recognizer 拖动手势识别器对象实例
+ */
+- (void)handlePan:(UIPanGestureRecognizer *)recognizer {
+    
+//    recognizer.view.ba
+    //视图前置操作
+    [recognizer.view.superview bringSubviewToFront:recognizer.view];
+    
+    // view 中心点坐标
+    CGPoint center = recognizer.view.center;
+//    NSLog(@"%@", NSStringFromCGPoint(center));
+    CGSize viewSize = recognizer.view.bounds.size;
+    // 移动的坐标
+    CGPoint translation = [recognizer translationInView:self.view];
+//    NSLog(@"%@", NSStringFromCGPoint(translation));
+    UIEdgeInsets insets = [self safeAreaInsetsWithView]; //安全区域
+    CGFloat leftMargin = viewSize.width / 2 + insets.left;
+    CGFloat topMargin = viewSize.height / 2 + insets.top;
+    CGFloat availableWidth  = SCREEN_WIDTH - viewSize.width / 2 ;
+    CGFloat availableHeight  = SCREEN_HEIGHT - viewSize.height / 2;
+    if(center.x < SCREEN_WIDTH /2) //按钮在左半屏
+    {
+        availableWidth -= insets.left;
+    }else { //按钮在右半屏
+        availableWidth -= insets.right;
+    }
+    
+    if(center.y < SCREEN_HEIGHT / 2){ //按钮在上半屏
+        availableHeight -= insets.top;
+    }else { // 按钮在下半屏
+        availableHeight -= insets.bottom;
+    }
+    
+    CGFloat nextPointX =MAX(center.x + translation.x, leftMargin); //最左
+    CGFloat nextPointY =MAX(center.y + translation.y, topMargin); //最上
+    nextPointX =MIN(nextPointX, availableWidth); //最右
+    nextPointY =MIN(nextPointY, availableHeight); //最下
+    recognizer.view.center = CGPointMake(nextPointX,nextPointY);
+    [recognizer setTranslation:CGPointZero inView:self.view];
+    
+    if (recognizer.state == UIGestureRecognizerStateBegan) {
+        [self.csCloseButton setImage:self.csCloseButtonImg_Pressed forState:UIControlStateNormal];
+//        [recognizer.view setBackgroundColor:[UIColor colorWithPatternImage:self.csCloseButtonImg_Pressed]];
+    }
+    if (recognizer.state == UIGestureRecognizerStateEnded
+        || recognizer.state == UIGestureRecognizerStateCancelled
+        ||recognizer.state == UIGestureRecognizerStateFailed)
+    {
+        [self.csCloseButton setImage:self.csCloseButtonImg forState:UIControlStateNormal];
+//        [recognizer.view setBackgroundColor:[UIColor colorWithPatternImage:self.csCloseButtonImg]];
+    }
+//    if (recognizer.state == UIGestureRecognizerStateEnded) {
+//        //计算速度向量的长度，当他小于200时，滑行会很短
+//        CGPoint velocity = [recognizer velocityInView:self.view];
+//        CGFloat magnitude = sqrtf((velocity.x * velocity.x) + (velocity.y * velocity.y));
+//        CGFloat slideMult = magnitude / 200;
+//        //NSLog(@"magnitude: %f, slideMult: %f", magnitude, slideMult); //e.g. 397.973175, slideMult: 1.989866
+//
+//        //基于速度和速度因素计算一个终点
+//        float slideFactor = 0.1 * slideMult;
+//        CGPoint finalPoint = CGPointMake(center.x + (velocity.x * slideFactor),
+//                                         center.y + (velocity.y * slideFactor));
+//        //限制最小［cornerRadius］和最大边界值［self.view.bounds.size.width - cornerRadius］，以免拖动出屏幕界限
+//        finalPoint.x = MIN(MAX(finalPoint.x, cornerRadius),
+//                           self.view.bounds.size.width - cornerRadius);
+//        finalPoint.y = MIN(MAX(finalPoint.y, cornerRadius),
+//                           self.view.bounds.size.height - cornerRadius);
+//
+//        //使用 UIView 动画使 view 滑行到终点
+//        [UIView animateWithDuration:slideFactor*2
+//                              delay:0
+//                            options:UIViewAnimationOptionCurveEaseOut
+//                         animations:^{
+//                             recognizer.view.center = finalPoint;
+//                         }
+//                         completion:nil];
+//    }
 }
 
 - (id)settingForKey:(NSString*)key
@@ -1216,6 +1320,9 @@
     UIImage* result = nil;
     if (name) {
         result = [UIImage imageNamed:name];
+//        NSString *path = [[NSBundle mainBundle] pathForResource:name ofType:@"png"];
+//        NSData *image = [NSData dataWithContentsOfFile:path];
+//        result = [UIImage imageWithData:image scale:2];
     } else if (altPath) {
         NSString* path = [[[NSBundle mainBundle] bundlePath]
                           stringByAppendingPathComponent:[NSString pathWithComponents:@[@"www", altPath]]];
@@ -1275,11 +1382,14 @@
 
             if (buttonImagePressed) {
                 [result setImage:buttonImagePressed forState:UIControlStateHighlighted];
-                result.adjustsImageWhenHighlighted = NO;
+//                result.adjustsImageWhenHighlighted = NO;
             }
 
             [result setImage:buttonImage forState:UIControlStateNormal];
-            [result addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
+            if(action != nil){
+                [result addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
+            }
+            
         }
     } else if (!buttonProps) {
         [self.navigationDelegate emitWarning:kThemeableBrowserEmitCodeUndefined
@@ -1476,6 +1586,39 @@
     return _statusBarStyle;
 }
 
+- (void)cusCloseBtnClick
+{
+    NSDictionary *cusCloseBtnOptions = @{kThemeableBrowserPropEvent:@"cusClosePressed"};
+    [self emitEventForButton:cusCloseBtnOptions];
+
+    self.currentURL = nil;
+
+    if ([self getBoolFromDict:_browserOptions.browserProgress withKey:kThemeableBrowserPropShowProgress]) {
+        [self.webView removeObserver:self forKeyPath:@"estimatedProgress"];
+    }
+
+    if ((self.navigationDelegate != nil) && [self.navigationDelegate respondsToSelector:@selector(browserExit)]) {
+        [self.navigationDelegate browserExit];
+    }
+
+    //设置屏幕的转向为竖屏
+    [[UIDevice currentDevice] setValue:@(UIDeviceOrientationPortrait) forKey:@"orientation"];
+    //刷新
+    [UIViewController attemptRotationToDeviceOrientation];
+    [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleDefault;
+    
+    // Run later to avoid the "took a long time" log message.
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if ([self respondsToSelector:@selector(presentingViewController)]) {
+            [[self presentingViewController] dismissViewControllerAnimated:!_browserOptions.disableAnimation completion:nil];
+        } else {
+            [[self parentViewController] dismissViewControllerAnimated:!_browserOptions.disableAnimation completion:nil];
+        }
+    });
+
+
+}
+
 - (void)close
 {
     [self emitEventForButton:_browserOptions.closeButton];
@@ -1657,49 +1800,75 @@
 
 - (void) rePositionViews {
 
+    UIEdgeInsets insets = [self safeAreaInsetsWithView]; //安全区域
+    [self.webView setFrame:CGRectMake(insets.left, insets.top, SCREEN_WIDTH - insets.left - insets.right,SCREEN_HEIGHT - insets.top - insets.bottom)];
+    
+    //自定义关闭按钮重置到左上角
+    CGRect csCloseBtnBounds = self.csCloseButton.bounds;
+    csCloseBtnBounds.origin.x = insets.left;
+    csCloseBtnBounds.origin.y = insets.top+30;
+    self.csCloseButton.frame = csCloseBtnBounds;
+    
+    //进度条位置调整
+    [self.progressView setFrame:CGRectMake(insets.left,insets.top,SCREEN_WIDTH-insets.left-insets.right,SCREEN_HEIGHT-insets.top-insets.bottom)];
+    
+    [self layoutButtons];
+    
     // Webview height is a bug that appear in the plugin for ios >= 11 so we need to keep the previous code that work great for previous versions
-    if (@available(iOS 11, *)) {
-        
-        CGFloat toolbarHeight = [self getFloatFromDict:_browserOptions.toolbar withKey:kThemeableBrowserPropHeight withDefault:TOOLBAR_DEF_HEIGHT];
-        CGFloat statusBarOffset = [self getStatusBarOffset];
-        CGFloat webviewOffset = _browserOptions.fullscreen ? 0.0 : toolbarHeight + statusBarOffset;
-        
-        if ([_browserOptions.toolbarposition isEqualToString:kThemeableBrowserToolbarBarPositionTop]) {
-            // The webview height calculated did not take the status bar into account. Thus we need to remove status bar height to the webview height.
-            [self.webView setFrame:CGRectMake(self.webView.frame.origin.x, webviewOffset, self.webView.frame.size.width, (self.webView.frame.size.height-statusBarOffset))];
-            [self.toolbar setFrame:CGRectMake(self.toolbar.frame.origin.x, [self getStatusBarOffset], self.toolbar.frame.size.width, self.toolbar.frame.size.height)];
-        }
-        // When positionning the iphone to landscape mode, status bar is hidden. The problem is that we set the webview height just before with removing the status bar height. We need to adjust the phenomen by adding the preview status bar height. We had to add manually 20 (pixel) because in landscape mode, the status bar height is equal to 0.
-        if (statusBarOffset == 0) {
-            [self.webView setFrame:CGRectMake(self.webView.frame.origin.x, webviewOffset, self.webView.frame.size.width, (self.webView.frame.size.height+20))];
-        }
-        
-        CGFloat screenWidth = CGRectGetWidth(self.view.frame);
-        NSInteger width = floorf(screenWidth - self.titleOffset * 2.0f);
-        if (self.titleLabel) {
-            self.titleLabel.frame = CGRectMake(floorf((screenWidth - width) / 2.0f), 0, width, toolbarHeight);
-        }
-        
-        [self layoutButtons];
-        
-    } else {
-        
-        CGFloat toolbarHeight = [self getFloatFromDict:_browserOptions.toolbar withKey:kThemeableBrowserPropHeight withDefault:TOOLBAR_DEF_HEIGHT];
-        CGFloat webviewOffset = _browserOptions.fullscreen ? 0.0 : toolbarHeight;
-        
-        if ([_browserOptions.toolbarposition isEqualToString:kThemeableBrowserToolbarBarPositionTop]) {
-            [self.webView setFrame:CGRectMake(self.webView.frame.origin.x, webviewOffset, self.webView.frame.size.width, self.webView.frame.size.height)];
-            [self.toolbar setFrame:CGRectMake(self.toolbar.frame.origin.x, [self getStatusBarOffset], self.toolbar.frame.size.width, self.toolbar.frame.size.height)];
-        }
-        
-        CGFloat screenWidth = CGRectGetWidth(self.view.frame);
-        NSInteger width = floorf(screenWidth - self.titleOffset * 2.0f);
-        if (self.titleLabel) {
-            self.titleLabel.frame = CGRectMake(floorf((screenWidth - width) / 2.0f), 0, width, toolbarHeight);
-        }
-        
-        [self layoutButtons];
+//    if (@available(iOS 11, *)) {
+//
+//        CGFloat toolbarHeight = [self getFloatFromDict:_browserOptions.toolbar withKey:kThemeableBrowserPropHeight withDefault:TOOLBAR_DEF_HEIGHT];
+//        CGFloat statusBarOffset = [self getStatusBarOffset];
+//        CGFloat webviewOffset = _browserOptions.fullscreen ? 0.0 : toolbarHeight + statusBarOffset;
+//
+//        if ([_browserOptions.toolbarposition isEqualToString:kThemeableBrowserToolbarBarPositionTop]) {
+//            // The webview height calculated did not take the status bar into account. Thus we need to remove status bar height to the webview height.
+//            [self.webView setFrame:CGRectMake(self.webView.frame.origin.x, webviewOffset, self.webView.frame.size.width, (self.webView.frame.size.height-statusBarOffset))];
+//            [self.toolbar setFrame:CGRectMake(self.toolbar.frame.origin.x, [self getStatusBarOffset], self.toolbar.frame.size.width, self.toolbar.frame.size.height)];
+//        }
+//        // When positionning the iphone to landscape mode, status bar is hidden. The problem is that we set the webview height just before with removing the status bar height. We need to adjust the phenomen by adding the preview status bar height. We had to add manually 20 (pixel) because in landscape mode, the status bar height is equal to 0.
+//        if (statusBarOffset == 0) {
+//            [self.webView setFrame:CGRectMake(self.webView.frame.origin.x, webviewOffset, self.webView.frame.size.width, (self.webView.frame.size.height+20))];
+//        }
+//
+//        CGFloat screenWidth = CGRectGetWidth(self.view.frame);
+//        NSInteger width = floorf(screenWidth - self.titleOffset * 2.0f);
+//        if (self.titleLabel) {
+//            self.titleLabel.frame = CGRectMake(floorf((screenWidth - width) / 2.0f), 0, width, toolbarHeight);
+//        }
+//
+//        [self layoutButtons];
+//
+//    } else {
+//
+//        CGFloat toolbarHeight = [self getFloatFromDict:_browserOptions.toolbar withKey:kThemeableBrowserPropHeight withDefault:TOOLBAR_DEF_HEIGHT];
+//        CGFloat webviewOffset = _browserOptions.fullscreen ? 0.0 : toolbarHeight;
+//
+//        if ([_browserOptions.toolbarposition isEqualToString:kThemeableBrowserToolbarBarPositionTop]) {
+//            [self.webView setFrame:CGRectMake(self.webView.frame.origin.x, webviewOffset, self.webView.frame.size.width, self.webView.frame.size.height)];
+//            [self.toolbar setFrame:CGRectMake(self.toolbar.frame.origin.x, [self getStatusBarOffset], self.toolbar.frame.size.width, self.toolbar.frame.size.height)];
+//        }
+//
+//        CGFloat screenWidth = CGRectGetWidth(self.view.frame);
+//        NSInteger width = floorf(screenWidth - self.titleOffset * 2.0f);
+//        if (self.titleLabel) {
+//            self.titleLabel.frame = CGRectMake(floorf((screenWidth - width) / 2.0f), 0, width, toolbarHeight);
+//        }
+//
+//        [self layoutButtons];
+//    }
+}
+
+- (UIEdgeInsets)safeAreaInsetsWithView // 获取安全区域
+{
+#ifdef __IPHONE_11_0
+    if (@available(iOS 11.0, *))
+    {
+        return [UIApplication sharedApplication].delegate.window.safeAreaInsets;
     }
+#endif
+
+    return UIEdgeInsetsZero;
 }
 
 - (CGFloat) getFloatFromDict:(NSDictionary*)dict withKey:(NSString*)key withDefault:(CGFloat)def
