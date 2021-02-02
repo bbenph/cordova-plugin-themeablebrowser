@@ -2125,7 +2125,7 @@ static void extracted(CDVThemeableBrowserViewController *object, WKWebView *theW
 
         self.zoom = YES;
         self.enableviewportscale = NO;
-        self.mediaplaybackrequiresuseraction = NO;
+        self.mediaplaybackrequiresuseraction = YES;
         self.allowinlinemediaplayback = NO;
         self.keyboarddisplayrequiresuseraction = YES;
         self.suppressesincrementalrendering = NO;
