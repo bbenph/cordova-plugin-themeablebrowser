@@ -2080,7 +2080,13 @@ static void extracted(CDVThemeableBrowserViewController *object, WKWebView *theW
 - (NSUInteger)supportedInterfaceOrientations
 {
     if ((self.orientationDelegate != nil) && [self.orientationDelegate respondsToSelector:@selector(supportedInterfaceOrientations)]) {
-        return [self.orientationDelegate supportedInterfaceOrientations];
+//        return [self.orientationDelegate supportedInterfaceOrientations];
+        if([_browserOptions.orientation isEqualToString:@"LANDSCAPE"]){
+            return UIInterfaceOrientationMaskLandscapeRight | UIInterfaceOrientationMaskLandscapeLeft;
+        }else if([_browserOptions.orientation isEqualToString:@"PORTRAIT"]){
+            return UIInterfaceOrientationMaskPortrait;
+        }
+        return UIInterfaceOrientationMaskLandscapeLeft | UIInterfaceOrientationMaskLandscapeRight | UIInterfaceOrientationMaskPortrait;
     }
 
     return 1 << UIInterfaceOrientationPortrait;
@@ -2117,6 +2123,7 @@ static void extracted(CDVThemeableBrowserViewController *object, WKWebView *theW
 {
     if (self = [super init]) {
         // default values
+        self.orientation=@"AUTO";
         self.location = YES;
         self.closebuttoncaption = nil;
         self.toolbarposition = kThemeableBrowserToolbarBarPositionBottom;
@@ -2125,7 +2132,7 @@ static void extracted(CDVThemeableBrowserViewController *object, WKWebView *theW
 
         self.zoom = YES;
         self.enableviewportscale = NO;
-        self.mediaplaybackrequiresuseraction = NO;
+        self.mediaplaybackrequiresuseraction = YES;
         self.allowinlinemediaplayback = NO;
         self.keyboarddisplayrequiresuseraction = YES;
         self.suppressesincrementalrendering = NO;

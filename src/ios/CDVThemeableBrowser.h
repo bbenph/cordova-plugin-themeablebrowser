@@ -34,6 +34,7 @@
 
 @interface CDVThemeableBrowserOptions : NSObject {}
 
+@property (nonatomic) NSString* orientation;
 @property (nonatomic) BOOL location;
 @property (nonatomic) NSString* closebuttoncaption;
 @property (nonatomic) NSString* toolbarposition;
