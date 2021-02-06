@@ -128,7 +128,7 @@ public class ThemeableBrowser extends CordovaPlugin {
     private LinearLayout rightButtonContainer;
     private EditText edittext;
     private CallbackContext callbackContext;
-    
+
     private ValueCallback<Uri> mUploadCallback;
     private ValueCallback<Uri[]> mUploadCallbackLollipop;
     private final static int FILECHOOSER_REQUESTCODE = 1;
@@ -163,6 +163,12 @@ public class ThemeableBrowser extends CordovaPlugin {
             final Options features = parseFeature(args.optString(2));
 
             this.cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+            if(features.orientation.equals("LANDSCAPE")){
+              this.cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            }
+            if(features.orientation.equals("PORTRAIT")){
+              this.cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            }
             this.cordova.getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -856,7 +862,7 @@ public class ThemeableBrowser extends CordovaPlugin {
                 if (back != null) {
                     back.setEnabled(features.backButtonCanClose);
                     if(features.backButton != null && !features.backButton.showFirstTime) {
-                        back.setVisibility(INVISIBLE);                        
+                        back.setVisibility(INVISIBLE);
                     }
                 }
 
@@ -895,7 +901,7 @@ public class ThemeableBrowser extends CordovaPlugin {
                 if (reloadBtn != null) {
                     reloadBtn.setEnabled(true);
                     if(features.backButton != null && !features.backButton.showFirstTime) {
-                        back.setVisibility(INVISIBLE);    
+                        back.setVisibility(INVISIBLE);
                     }
                 }
 
@@ -1076,15 +1082,15 @@ public class ThemeableBrowser extends CordovaPlugin {
 
                         if (back != null) {
                             back.setEnabled(canGoBack || features.backButtonCanClose);
-                            
+
                             if(features.backButton != null && !features.backButton.showFirstTime) {
                                 if(canGoBack) {
-                                    back.setVisibility(VISIBLE);    
+                                    back.setVisibility(VISIBLE);
                                 }else {
-                                    back.setVisibility(INVISIBLE);    
+                                    back.setVisibility(INVISIBLE);
                                 }
                             }
-                                
+
                         }
 
                         if (forward != null) {
@@ -1101,7 +1107,7 @@ public class ThemeableBrowser extends CordovaPlugin {
                 settings.setPluginState(android.webkit.WebSettings.PluginState.ON);
 
                 String overrideUserAgent = preferences.getString("OverrideUserAgent", null);
-                
+
                 if (features.customUserAgent != null) {
                     settings.setUserAgentString(features.customUserAgent);
                 } else if (overrideUserAgent != null) {
@@ -1232,7 +1238,7 @@ public class ThemeableBrowser extends CordovaPlugin {
                 }
 
                 if (back != null && features.backButton != null
-                        && !ALIGN_RIGHT.equals(features.backButton.align)) {                    
+                        && !ALIGN_RIGHT.equals(features.backButton.align)) {
                     leftButtonContainer.addView(back, 0);
                     leftContainerWidth
                             += back.getLayoutParams().width;
@@ -1826,7 +1832,7 @@ public class ThemeableBrowser extends CordovaPlugin {
             // https://issues.apache.org/jira/browse/CB-11248
             view.clearFocus();
             view.requestFocus();
-            
+
             // Alias the iOS webkit namespace for postMessage()
             if (Build.VERSION.SDK_INT >= 17){
                 injectDeferredObject("window.webkit={messageHandlers:{cordova_iab:cordova_iab}}", null);
@@ -1928,6 +1934,7 @@ public class ThemeableBrowser extends CordovaPlugin {
      * A class to hold parsed option properties.
      */
     private static class Options {
+        public String orientation = "AUTO";
         public boolean location = true;
         public boolean hidden = false;
         public boolean clearcache = false;
