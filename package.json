@@ -1,6 +1,6 @@
 {
   "name": "ben-cordova-plugin-themeablebrowser",
-  "version": "0.4.0",
+  "version": "0.6.0",
   "description": "Cordova ThemeableBrowser Plugin",
   "cordova": {
     "id": "ben-cordova-plugin-themeablebrowser",
