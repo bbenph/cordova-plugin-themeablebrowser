@@ -1164,7 +1164,7 @@
     }
 
     self.view.backgroundColor = [CDVThemeableBrowserViewController colorFromRGBA:[self getStringFromDict:_browserOptions.statusbar withKey:kThemeableBrowserPropColor withDefault:@"#ffffffff"]];
-    [self.view addSubview:self.toolbar];
+    // [self.view addSubview:self.toolbar]; // 这里只用statusbar的背景色 这个 toolbar 用不到隐藏  不然会阻挡下面的 webview 点击事件
 //    self.progressView=[[UIProgressView   alloc] initWithFrame:CGRectMake(0.0, toolbarY+toolbarHeight+[self getStatusBarOffset], self.view.bounds.size.width, 20.0)];
     
     self.progressView=[[UIProgressView   alloc] initWithFrame:CGRectMake(insets.left,insets.top,SCREEN_WIDTH-insets.left-insets.right,SCREEN_HEIGHT-insets.top-insets.bottom)];
