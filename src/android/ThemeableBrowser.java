@@ -330,6 +330,7 @@ public class ThemeableBrowser extends CordovaPlugin {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        if(cusCloseBtn == null) return;
         FrameLayout.LayoutParams cusCloseBtnParams = (FrameLayout.LayoutParams) cusCloseBtn.getLayoutParams();
         cusCloseBtnParams.leftMargin=0;
         cusCloseBtnParams.topMargin=0;
