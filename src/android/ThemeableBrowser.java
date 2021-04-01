@@ -124,6 +124,7 @@ public class ThemeableBrowser extends CordovaPlugin {
 
     private ThemeableBrowserDialog dialog;
     private WebView inAppWebView;
+    private WebView loadingWebView;
     private LinearLayout leftButtonContainer;
     private LinearLayout rightButtonContainer;
     private EditText edittext;
@@ -163,12 +164,13 @@ public class ThemeableBrowser extends CordovaPlugin {
             final Options features = parseFeature(args.optString(2));
 
             this.cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-            if(features.orientation.equals("LANDSCAPE")){
-              this.cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-            }
-            if(features.orientation.equals("PORTRAIT")){
-              this.cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            }
+//            this.cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+//            if(features.orientation.equals("LANDSCAPE")){
+//              this.cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+//            }
+//            if(features.orientation.equals("PORTRAIT")){
+//              this.cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+//            }
             this.cordova.getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -1072,33 +1074,47 @@ public class ThemeableBrowser extends CordovaPlugin {
                 });
 
                 WebViewClient client = new ThemeableBrowserClient(thatWebView, new PageLoadListener() {
-                    @Override
-                    public void onPageFinished(String url, boolean canGoBack, boolean canGoForward) {
-                        if (inAppWebView != null
-                                && title != null && features.title != null
-                                && features.title.staticText == null
-                                && features.title.showPageTitle) {
-                            title.setText(inAppWebView.getTitle());
-                        }
+                  @Override
+                  public void onPageStarted() {
+                    cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                    loadingWebView.setVisibility(View.VISIBLE);
+                  }
 
-                        if (back != null) {
-                            back.setEnabled(canGoBack || features.backButtonCanClose);
+                  @Override
+                  public void onPageFinished(String url, boolean canGoBack, boolean canGoForward) {
+                    loadingWebView.setVisibility(View.INVISIBLE);
+                    if(features.orientation.equals("LANDSCAPE")){
+                      cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                    }
+                    if(features.orientation.equals("PORTRAIT")){
+                      cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                    }
 
-                            if(features.backButton != null && !features.backButton.showFirstTime) {
-                                if(canGoBack) {
-                                    back.setVisibility(VISIBLE);
-                                }else {
-                                    back.setVisibility(INVISIBLE);
-                                }
+                    if (inAppWebView != null
+                            && title != null && features.title != null
+                            && features.title.staticText == null
+                            && features.title.showPageTitle) {
+                        title.setText(inAppWebView.getTitle());
+                    }
+
+                    if (back != null) {
+                        back.setEnabled(canGoBack || features.backButtonCanClose);
+
+                        if(features.backButton != null && !features.backButton.showFirstTime) {
+                            if(canGoBack) {
+                                back.setVisibility(VISIBLE);
+                            }else {
+                                back.setVisibility(INVISIBLE);
                             }
-
-                        }
-
-                        if (forward != null) {
-                            forward.setEnabled(canGoForward);
                         }
                     }
+
+                    if (forward != null) {
+                        forward.setEnabled(canGoForward);
+                    }
+                  }
                 });
+
                 inAppWebView.setWebViewClient(client);
                 WebSettings settings = inAppWebView.getSettings();
                 settings.setJavaScriptEnabled(true);
@@ -1106,6 +1122,8 @@ public class ThemeableBrowser extends CordovaPlugin {
                 settings.setBuiltInZoomControls(features.zoom);
                 settings.setDisplayZoomControls(false);
                 settings.setPluginState(android.webkit.WebSettings.PluginState.ON);
+
+                settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
 
                 String overrideUserAgent = preferences.getString("OverrideUserAgent", null);
 
@@ -1185,7 +1203,13 @@ public class ThemeableBrowser extends CordovaPlugin {
                 inAppWebView.requestFocus();
                 inAppWebView.requestFocusFromTouch();
 
-                // Add buttons to either leftButtonsContainer or
+                // 这里初始化 loadingWebview 用于在inappwebview展示画面前 用这个webview播放加载动画
+                loadingWebView = new WebView(cordova.getActivity());
+                loadingWebView.setLayoutParams(new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+                loadingWebView.loadUrl("file:///android_asset/gameLoading/loading.html");
+                loadingWebView.setVisibility(View.INVISIBLE);
+
+              // Add buttons to either leftButtonsContainer or
                 // rightButtonsContainer according to user's alignment
                 // configuration.
                 int leftContainerWidth = 0;
@@ -1339,6 +1363,8 @@ public class ThemeableBrowser extends CordovaPlugin {
                 if(features.hidden) {
                     dialog.hide();
                 }
+
+                main.addView(loadingWebView);
             }
         };
         this.cordova.getActivity().runOnUiThread(runnable);
@@ -1647,6 +1673,7 @@ public class ThemeableBrowser extends CordovaPlugin {
     }
 
     public static interface PageLoadListener {
+        public void onPageStarted();
         public void onPageFinished(String url, boolean canGoBack,
                 boolean canGoForward);
     }
@@ -1822,6 +1849,10 @@ public class ThemeableBrowser extends CordovaPlugin {
                 obj.put("type", LOAD_START_EVENT);
                 obj.put("url", newloc);
                 sendUpdate(obj, true);
+
+              if (this.callback != null) {
+                this.callback.onPageStarted();
+              }
             } catch (JSONException ex) {
                 Log.e(LOG_TAG, "URI passed in has caused a JSON error.");
             }

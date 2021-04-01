@@ -21,7 +21,7 @@
 <plugin
       xmlns="http://apache.org/cordova/ns/plugins/1.0"
       id="ben-cordova-plugin-themeablebrowser"
-      version="0.7.1">
+      version="0.7.2">
 
     <name>ThemeableBrowser</name>
     <description>Cordova ThemeableBrowser Plugin</description>
@@ -48,6 +48,9 @@
         <!-- 拷贝按钮图片到Android目录 -->
         <source-file src="src/android/res/drawable-xhdpi/close.png" target-dir="src/main/res/drawable-xhdpi" />
         <source-file src="src/android/res/drawable-xhdpi/close_pressed.png" target-dir="src/main/res/drawable-xhdpi" />
+        <!-- 拷贝loading的html到android目录 -->
+        <source-file src="src/android/res/gameLoading/loading.html" target-dir="src/main/assets/gameLoading" />
+        <source-file src="src/android/res/gameLoading/loading.gif" target-dir="src/main/assets/gameLoading" />
 
         <source-file src="src/android/ThemeableBrowser.java" target-dir="src/com/initialxy/cordova/themeablebrowser" />
         <source-file src="src/android/ThemeableBrowserDialog.java" target-dir="src/com/initialxy/cordova/themeablebrowser" />
