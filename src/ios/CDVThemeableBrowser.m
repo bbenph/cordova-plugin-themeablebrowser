@@ -729,7 +729,14 @@
     }
 }
 
+// 页面开始加载时调用
+- (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation{
+    self.themeableBrowserViewController.loadingWebView.hidden = FALSE;
+    NSLog(@"页面开始加载");
+}
+
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
+    self.themeableBrowserViewController.loadingWebView.hidden = TRUE;
     if (self.callbackId != nil) {
         NSString* url = [webView.URL absoluteString];
         if(url == nil){
@@ -1179,6 +1186,29 @@
         [self.view addSubview:self.progressView];
         [self.webView addObserver:self forKeyPath:@"estimatedProgress" options:NSKeyValueObservingOptionNew context:nil];
     }
+    
+    if([_browserOptions.orientation isEqualToString:@"LANDSCAPE"]){
+        self.loadingWebView = [[WKWebView alloc] initWithFrame:CGRectMake(insets.top, 0, SCREEN_HEIGHT, SCREEN_WIDTH + insets.bottom)];
+    }else {
+        self.loadingWebView = [[WKWebView alloc] initWithFrame:CGRectMake(insets.left, insets.top, SCREEN_WIDTH - insets.left - insets.right,SCREEN_HEIGHT - insets.top - insets.bottom)];
+    }
+    
+    [self.view addSubview:self.loadingWebView];
+    [self.view bringSubviewToFront:self.csCloseButton];
+    
+    NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
+    //获取本地html目录 basePath
+    NSString *basePath = [NSString stringWithFormat: @"%@/www/gameLoading", bundlePath];
+    //获取本地html目录 baseUrl
+    NSURL *baseUrl = [NSURL fileURLWithPath: basePath isDirectory: YES];
+    NSLog(@"%@", baseUrl);
+    //html 路径
+    NSString *indexPath = [NSString stringWithFormat: @"%@/loading.html", basePath];
+    //html 文件中内容
+    NSString *indexContent = [NSString stringWithContentsOfFile:
+    indexPath encoding: NSUTF8StringEncoding error:nil];
+    //显示内容
+    [self.loadingWebView loadHTMLString: indexContent baseURL: baseUrl];
 }
 
 /**
@@ -2178,6 +2208,4 @@ static void extracted(CDVThemeableBrowserViewController *object, WKWebView *theW
 
     return 1 << UIInterfaceOrientationPortrait;
 }
-
-
 @end

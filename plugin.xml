@@ -21,7 +21,7 @@
 <plugin
       xmlns="http://apache.org/cordova/ns/plugins/1.0"
       id="ben-cordova-plugin-themeablebrowser"
-      version="0.7.2">
+      version="0.7.3">
 
     <name>ThemeableBrowser</name>
     <description>Cordova ThemeableBrowser Plugin</description>
@@ -75,6 +75,8 @@
         <!-- 拷贝按钮图片到ios目录 -->
         <resource-file src="src/ios/Resources/close@2x.png" />
         <resource-file src="src/ios/Resources/close_pressed@2x.png" />
+        <!-- 拷贝loading的html到ios目录 -->
+        <asset src="src/ios/gameLoading" target="gameLoading" />
 
         <framework src="CoreGraphics.framework" />
     </platform>
