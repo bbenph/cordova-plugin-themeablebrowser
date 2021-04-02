@@ -112,6 +112,7 @@
 }
 
 @property (nonatomic, strong) IBOutlet WKWebView* webView;
+@property (nonatomic, strong) IBOutlet WKWebView* loadingWebView;
 @property (nonatomic, strong) IBOutlet UIButton* closeButton;
 @property (nonatomic, strong) IBOutlet UILabel* addressLabel;
 @property (nonatomic, strong) IBOutlet UILabel* titleLabel;
