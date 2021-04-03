@@ -1263,7 +1263,19 @@
         ||recognizer.state == UIGestureRecognizerStateFailed)
     {
         [self.csCloseButton setImage:self.csCloseButtonImg forState:UIControlStateNormal];
-//        [recognizer.view setBackgroundColor:[UIColor colorWithPatternImage:self.csCloseButtonImg]];
+        if(center.x < SCREEN_WIDTH /2) //按钮在左半屏
+        {
+//            recognizer.view.center = CGPointMake(nextPointX,nextPointY);
+//            availableWidth -= insets.left;
+            [UIView animateWithDuration:0.2 animations:^{
+                recognizer.view.center = CGPointMake(leftMargin,nextPointY);
+            }];
+        }else { //按钮在右半屏
+            [UIView animateWithDuration:0.2 animations:^{
+                recognizer.view.center = CGPointMake(availableWidth,nextPointY);
+            }];
+//            availableWidth -= insets.right;
+        }
     }
 //    if (recognizer.state == UIGestureRecognizerStateEnded) {
 //        //计算速度向量的长度，当他小于200时，滑行会很短
