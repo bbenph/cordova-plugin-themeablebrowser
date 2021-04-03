@@ -53,6 +53,7 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.LinearInterpolator;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.CookieManager;
@@ -792,7 +793,7 @@ public class ThemeableBrowser extends CordovaPlugin {
                                     top = bottom - v.getHeight();
                                 }
                                 v.layout(left, top, right, bottom); //设置view四个顶点坐标(相对父布局)
-                                Log.i("touch","position：" + left + ", " +top + ", " + right + ", " + bottom + ", 屏幕宽高 "+screenWidth + "," + screenHeight+","+statusBarHeight );
+//                                Log.i("touch","position：" + left + ", " +top + ", " + right + ", " + bottom + ", 屏幕宽高 "+screenWidth + "," + screenHeight+","+statusBarHeight );
 //                                 Toast.makeText(cordova.getContext(), "position：" + left + ", " +
 //                                 top + ", " + right + ", " + bottom, Toast.LENGTH_SHORT).show();
                                 // 将当前的位置再次设置
@@ -808,8 +809,25 @@ public class ThemeableBrowser extends CordovaPlugin {
                                     cusBtnIsclick = false;
                                 }
 
-                                cusCloseBtnParams.leftMargin=v.getLeft();
-                                cusCloseBtnParams.topMargin=v.getTop();
+                              if (v.getLeft() + v.getWidth() <= screenWidth/2) { //靠左吸附
+                                v.animate()
+                                  .setInterpolator(new LinearInterpolator())
+                                  .setDuration(200)
+                                  .x(0)
+                                  .start();
+                                v.layout(0,v.getTop(),v.getWidth(),v.getBottom());
+                              } else { //靠右吸附
+                                int maxRight = screenWidth - v.getWidth();
+                                v.animate()
+                                  .setInterpolator(new LinearInterpolator())
+                                  .setDuration(200)
+                                  .x(maxRight)
+                                  .start();
+                                v.layout(screenWidth - v.getWidth(),v.getTop(),screenWidth,v.getBottom());
+                              }
+
+//                                cusCloseBtnParams.leftMargin=v.getLeft();
+//                                cusCloseBtnParams.topMargin=v.getTop();
 
 
 //                                // 向四周吸附
