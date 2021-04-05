@@ -1095,7 +1095,7 @@ public class ThemeableBrowser extends CordovaPlugin {
                   @Override
                   public void onPageStarted() {
                     cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-                    loadingWebView.setVisibility(View.VISIBLE);
+//                    loadingWebView.setVisibility(View.VISIBLE);
                   }
 
                   @Override
@@ -1225,7 +1225,7 @@ public class ThemeableBrowser extends CordovaPlugin {
                 loadingWebView = new WebView(cordova.getActivity());
                 loadingWebView.setLayoutParams(new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
                 loadingWebView.loadUrl("file:///android_asset/gameLoading/loading.html");
-                loadingWebView.setVisibility(View.INVISIBLE);
+//                loadingWebView.setVisibility(View.INVISIBLE);
 
               // Add buttons to either leftButtonsContainer or
                 // rightButtonsContainer according to user's alignment
