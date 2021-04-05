@@ -731,7 +731,7 @@
 
 // 页面开始加载时调用
 - (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation{
-    self.themeableBrowserViewController.loadingWebView.hidden = FALSE;
+//    self.themeableBrowserViewController.loadingWebView.hidden = FALSE;
     NSLog(@"页面开始加载");
 }
 
@@ -1209,6 +1209,7 @@
     indexPath encoding: NSUTF8StringEncoding error:nil];
     //显示内容
     [self.loadingWebView loadHTMLString: indexContent baseURL: baseUrl];
+    self.loadingWebView.hidden = FALSE;
 }
 
 /**
