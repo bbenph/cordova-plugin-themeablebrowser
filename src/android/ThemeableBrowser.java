@@ -1141,7 +1141,7 @@ public class ThemeableBrowser extends CordovaPlugin {
                 settings.setDisplayZoomControls(false);
                 settings.setPluginState(android.webkit.WebSettings.PluginState.ON);
 
-                settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+                settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
                 String overrideUserAgent = preferences.getString("OverrideUserAgent", null);
 
